@@ -5,30 +5,58 @@ class Slider extends HTMLElement {
       this.autoUpdateDuration = 5000; // in milliseconds
       this.animationDuration = 300; // in milliseconds
       this.animationFPS = 60;
+      this.width = "96vw";
+      this.height = "300px";
       this.timeStatus = Date.now();
+
+      this.width = this.#getModifiedValue("width", this.width);
+      this.height = this.#getModifiedValue("height", this.height);
+
+      if (this.hasAttribute("moveDuration")) {
+         const val = this.getAttribute("moveDuration");
+         if (val !== ""){
+            if (isNaN(val)) throw new Error("Please Pass a Numeric Value in moveDuration\nEg: 500 (500 = 0.5s)");
+            else if (Number(val) < 499) throw new Error("Please Pass a Higher Value in moveDuration\nEg: More than 500 (500 = 0.5s)");
+            this.autoUpdateDuration = Number(val);
+         }
+      }
 
       this.shadow = this.attachShadow({ mode: "open" });
       this.allImgs = this.querySelectorAll("img");
-      this.imgSrc = [...this.allImgs].map((e) => e.src);
+      this.imgSrc = [...this.allImgs].map((e) => {
+         if (e.src) return e.src;
+         return "";
+      });
       this.MSL = this.allImgs.length; // max slides size
       this.innerHTML = "";
 
-      this.template = document.createElement("template");
-      this.template.innerHTML = `<style>${this.#getCss()}</style>${this.#getHtml()}`;
-      this.shadow.appendChild(this.template.content.cloneNode(true));
+      if (this.MSL > 0) {
+         this.template = document.createElement("template");
+         this.template.innerHTML = `<style>${this.#getCss()}</style>${this.#getHtml()}`;
+         this.shadow.appendChild(this.template.content.cloneNode(true));
 
-      this.me = this.shadow.getElementById("slider");
-      this.main = this.shadow.getElementById("main");
-      this.slides = this.shadow.querySelectorAll(".slide");
-      this.options = this.shadow.querySelectorAll(".option");
+         this.me = this.shadow.getElementById("slider");
+         this.main = this.shadow.getElementById("main");
+         this.slides = this.shadow.querySelectorAll(".slide");
+         this.options = this.shadow.querySelectorAll(".option");
 
-      this.#setSliderImages();
+         this.#setSliderImages();
+         this.eventListener = new SliderEventListener(this);
 
-      this.eventListener = new SliderEventListener(this);
+         setTimeout(() => {
+            this.#update();
+         }, this.autoUpdateDuration);
+      }
+   }
 
-      setTimeout(() => {
-         this.#update();
-      }, this.autoUpdateDuration);
+   #getModifiedValue(attributeName, deafult) {
+      if (!this.hasAttribute(attributeName) || this.getAttribute(attributeName) === "") return deafult;
+      const val = this.getAttribute(attributeName);
+      if (isNaN(val)) {
+         return val;
+      } else {
+         return `${val}px`;
+      }
    }
 
    #getHtml() {
@@ -45,19 +73,18 @@ class Slider extends HTMLElement {
 
    #getCss() {
       return `
-      #slider *, #slider *::after, #slider *::before {
+      *, *::after, *::before {
          margin: 0;
          padding: 0;
          box-sizing: border-box;
          user-select: none;
-      }
-      :root {
-         --slider-w: 96vw;
+         --slider-w: ${this.width};
+         --pointer: ${navigator.userAgentData.mobile ? "auto" : "pointer"};
       }
       #slider {
          position: relative;
          width: var(--slider-w);
-         height: 300px;
+         height: ${this.height};
          display: flex;
          justify-content: center;
          border-radius: 1vw;
@@ -74,7 +101,7 @@ class Slider extends HTMLElement {
          height: 100%;
          overflow-x: scroll;
          overflow-y: hidden;
-         cursor: pointer;
+         cursor: var(--pointer);
       }
       #slider .slide {
          position: relative;
@@ -83,6 +110,21 @@ class Slider extends HTMLElement {
          background-position: center;
          background-repeat: no-repeat;
          background-size: cover;
+      }
+      #slider .slide::before {
+         content: "src not found!";
+         font-family: "Arial";
+         color: white;
+         font-size: calc(var(--slider-w) / 12);
+         font-weight: bold;
+         position: absolute;
+         width: 100%;
+         height: 100%;
+         display: flex;
+         background: linear-gradient(55deg, #212121 0%, #212121 40%, #323232 calc(40% + 1px), #323232 60%, #008F95 calc(60% + 1px), #008F95 70%, #14FFEC calc(70% + 1px), #14FFEC 100%);
+         justify-content: center;
+         align-items: center;
+         z-index: -1;
       }
       #slider #clickSelection {
          --radius: 15px;
@@ -100,7 +142,7 @@ class Slider extends HTMLElement {
          position: relative;
          width: var(--radius);
          height: var(--radius);
-         cursor: pointer;
+         cursor: var(--pointer);
          border-radius: 100px;
          margin: 0 2px;
          background-color: transparent;
