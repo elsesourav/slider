@@ -3,31 +3,46 @@
    <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link rel="shortcut icon" type="image/png" href="./src/icon_icon_icon_.png">
-      <title>Image Slider</title>
+      <link
+         rel="shortcut icon"
+         type="image/png"
+         href="./src/icon_icon_icon_.png"
+      />
+      <title>Slider</title>
       <style>
+         body {
+            overflow-x: hidden;
+         }
          h1 {
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+         }
+         p {
             font-family: arial;
             text-align: center;
+            font-weight: 700;
+            font-size: large;
          }
       </style>
 
       <script src="./sb-slider.js" defer></script>
    </head>
    <body>
-      <h1>Image Slider</h1>
-      <br />
+      <h1>Web Component</h1>
+      <br>
+      <p>Image Slider</p>
 
+      <!-- The 'duration' specifies the amount of time
+         to wait before transitioning to the next slide -->
       <sb-slider width="" height="" duration="">
          <slide src="./src/0.jpg" href="https://www.google.com/" />
-         <slide src="./src/1.jpg" href="#" />
-         <slide src="./src/2.jpg" href="https://www.youtube.com" />
+         <slide src="./src/1.jpg" href="https://www.youtube.com" />
+         <slide src="./src/2.jpg" href="#" />
          <slide src="./src/3.jpg" href="#" />
          <slide src="./src/4.jpg" href="#" />
          <slide src="./src/5.jpg" href="#" />
          <slide src="./src/6.jpg" href="#" />
          <slide src="./src/7.jpg" href="#" />
       </sb-slider>
-
    </body>
 </html>
