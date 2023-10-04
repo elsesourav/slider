@@ -9,23 +9,14 @@ class Slider extends HTMLElement {
       this.height = "300px";
       this.timeStatus = Date.now();
 
-      this.width = this.#getModifiedValue("width", this.width);
-      this.height = this.#getModifiedValue("height", this.height);
-
-      if (this.hasAttribute("moveDuration")) {
-         const val = this.getAttribute("moveDuration");
-         if (val !== ""){
-            if (isNaN(val)) throw new Error("Please Pass a Numeric Value in moveDuration\nEg: 500 (500 = 0.5s)");
-            else if (Number(val) < 499) throw new Error("Please Pass a Higher Value in moveDuration\nEg: More than 500 (500 = 0.5s)");
-            this.autoUpdateDuration = Number(val);
-         }
-      }
-
       this.shadow = this.attachShadow({ mode: "open" });
-      this.allImgs = this.querySelectorAll("img");
-      this.imgSrc = [...this.allImgs].map((e) => {
-         if (e.src) return e.src;
-         return "";
+      this.allImgs = this.querySelectorAll("slide");
+      this.slideData = [...this.allImgs].map((e) => {
+         const obj = { src: "", href: "" };
+
+         if (e.hasAttribute("src")) obj.src = e.getAttribute("src");
+         if (e.hasAttribute("href")) obj.href = e.getAttribute("href");
+         return obj;
       });
       this.MSL = this.allImgs.length; // max slides size
       this.innerHTML = "";
@@ -40,6 +31,8 @@ class Slider extends HTMLElement {
          this.slides = this.shadow.querySelectorAll(".slide");
          this.options = this.shadow.querySelectorAll(".option");
 
+         this.#setSliderHREF(this.slides);
+
          this.#setSliderImages();
          this.eventListener = new SliderEventListener(this);
 
@@ -49,14 +42,64 @@ class Slider extends HTMLElement {
       }
    }
 
-   #getModifiedValue(attributeName, deafult) {
-      if (!this.hasAttribute(attributeName) || this.getAttribute(attributeName) === "") return deafult;
-      const val = this.getAttribute(attributeName);
-      if (isNaN(val)) {
-         return val;
-      } else {
-         return `${val}px`;
+   static get observedAttributes() {
+      return ["width", "height", "duration"];
+   }
+
+   attributeChangedCallback(name, value, newValue) {
+      if (newValue && newValue != "") {
+         switch (name) {
+            case "width":
+               this.width = this.#getModifiedValue(newValue);
+               this.me.style.width = this.width;
+               [...this.slides].forEach((slide) => {
+                  slide.style.width = this.width;
+               });
+               break;
+
+            case "height":
+               this.height = this.#getModifiedValue(newValue);
+               this.me.style.height = this.height;
+               break;
+
+            case "duration":
+               const duration = this.#getModifiedValue(newValue, true);
+               if (duration < 499) {
+                  throw new Error(
+                     "Please Pass a Higher Value in moveDuration\nEg: More than 500 (500 = 0.5s)\n"
+                  );
+               } else {
+                  this.autoUpdateDuration = duration;
+               }
+               break;
+         }
       }
+   }
+
+   #getModifiedValue(value, isTime = false) {
+      if (isTime) {
+         // time format
+         return this.#getFormatTime(value);
+      } else if (isNaN(value)) {
+         return value;
+      } else {
+         return `${value}px`;
+      }
+   }
+
+   #getFormatTime(string) {
+      if (!isNaN(string)) {
+         // if is number
+         return Number(string);
+      } else if (string.indexOf("ms") != -1) {
+         const msIndex = string.indexOf("ms");
+         return Number(string.substring(0, msIndex));
+      } else if (string.indexOf("s") != -1) {
+         const sIndex = string.indexOf("s");
+         return Number(string.substring(0, sIndex)) * 1000;
+      }
+
+      return 1000;
    }
 
    #getHtml() {
@@ -115,7 +158,7 @@ class Slider extends HTMLElement {
          content: "src not found!";
          font-family: "Arial";
          color: white;
-         font-size: calc(var(--slider-w) / 12);
+         font-size: x-large;
          font-weight: bold;
          position: absolute;
          width: 100%;
@@ -169,10 +212,27 @@ class Slider extends HTMLElement {
       return new Promise((res) => setTimeout(res, ms));
    }
 
+   #setSliderHREF(slides) {
+      [...slides].forEach((slide) => {
+         slide.addEventListener("click", (e) => {
+            if (this.eventListener.onlyStart == this.eventListener.dx) {
+               const a = document.createElement("a");
+               a.href = this.slideData[this.index].href || "#";
+               document.body.appendChild(a);
+               a.click();
+               document.body.removeChild(a);
+               console.log(this.eventListener.down);
+            }
+         });
+      });
+   }
+
    #setSliderImages() {
       for (let i = -1; i <= 1; i++) {
          const I = (this.index + this.MSL + i) % this.MSL;
-         this.slides[i + 1].style.backgroundImage = `url("${this.imgSrc[I]}")`;
+         this.slides[
+            i + 1
+         ].style.backgroundImage = `url("${this.slideData[I].src}")`;
       }
       this.main.scrollLeft = this.main.clientWidth;
    }
@@ -244,6 +304,7 @@ class SliderEventListener {
       this.startX = 0;
       this.dx = 0;
       this.touchEnd = 0;
+      this.onlyStart = 0;
       this.MAX_FORCE = 100;
 
       /*  ---------- event listener for pc  -----------*/
@@ -310,13 +371,15 @@ class SliderEventListener {
 
    #onStart(x) {
       this.down = true;
-      this.startX = this.dx = x;
+      this.onlyStart = this.startX = this.dx = x;
    }
 
    #onMove(x) {
       if (this.down) {
          const dx = this.dx - x;
-         this.slider.main.scrollLeft += dx;
+         if (!navigator.userAgentData.mobile) {
+            this.slider.main.scrollLeft += dx;
+         }
          this.dx = x;
          this.slider.timeStatus = Date.now() + this.slider.autoUpdateDuration;
       }
