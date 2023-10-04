@@ -7,7 +7,7 @@
          this.animationDuration = 300; // in milliseconds
          this.animationFPS = 60;
          this.width = "96vw";
-         this.height = "300px";
+         this.height = window.innerWidth > 700 ? "400px" : "300px";
          this.timeStatus = Date.now();
 
          this.shadow = this.attachShadow({ mode: "open" });
