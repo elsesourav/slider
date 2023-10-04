@@ -222,7 +222,6 @@
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);
-                  console.log(this.eventListener.down);
                }
             });
          });
