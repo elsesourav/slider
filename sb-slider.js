@@ -305,7 +305,7 @@ class SliderEventListener {
       this.dx = 0;
       this.touchEnd = 0;
       this.onlyStart = 0;
-      this.MAX_FORCE = 100;
+      this.MAX_FORCE = navigator.userAgentData.mobile ? 30 : 100;
 
       /*  ---------- event listener for pc  -----------*/
       this.slider.main.addEventListener("mousedown", (e) =>
@@ -409,3 +409,6 @@ class SliderEventListener {
 }
 
 customElements.define("sb-slider", Slider);
+(() => {
+
+})();
